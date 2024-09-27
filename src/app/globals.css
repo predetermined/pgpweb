@@ -1,0 +1,19 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+::root {
+  @apply font-mono;
+}
+
+body {
+  @apply bg-neutral-50;
+}
+
+h2 {
+  @apply text-xl;
+}
+
+section {
+  @apply p-3 rounded-sm border border-neutral-300 bg-white;
+}
