@@ -177,6 +177,12 @@ export function Content(props: { version: string }) {
       title: "Please enter your vault password",
       body: (
         <>
+          <p className="bg-blue-300 border border-blue-400 p-1 rounded-sm text-xs">
+            If this is your first time using pgpweb, define a new vault password
+            below. The vault password is used to en-/decrypt your local storage
+            content.
+          </p>
+
           <label className="mt-2 block">
             <span className="block mb-1">Vault password</span>
             <Input name="vault-password" placeholder="jhk2!JKa!jk1__" />
@@ -200,9 +206,13 @@ export function Content(props: { version: string }) {
       <nav className="px-8 py-1 border-b border-neutral-300 bg-white flex justify-between">
         <span>pgpweb v{props.version}</span>
         {vaultEncryptionPassword ? (
-          <span className="bg-green-600 text-white px-1">Encrypted</span>
+          <span className="bg-green-300 px-1 border border-green-400">
+            Encrypted
+          </span>
         ) : (
-          <span className="bg-red-600 text-white px-1">Unencrypted</span>
+          <span className="bg-red-300 px-1 border border-red-400">
+            Unencrypted
+          </span>
         )}
       </nav>
 
