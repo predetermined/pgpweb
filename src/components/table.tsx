@@ -67,7 +67,7 @@ export const Table = (props: TableProps) => {
                   return (
                     <td
                       className={twMerge(
-                        "py-2 px-3 border-neutral-300 border-t border-l overflow-hidden overflow-ellipsis",
+                        "py-2 px-3 border-neutral-300 border-t border-l overflow-hidden break-all",
                         cell.alignRight ? "text-right" : "",
                         cellI === row.length - 1 ? "border-r" : "",
                         rowI === props.rows.length - 1 ? "border-b" : ""

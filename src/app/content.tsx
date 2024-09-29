@@ -63,9 +63,11 @@ interface SecPubKey<WithDetails extends boolean | undefined = undefined> {
         | false;
 }
 
-type Key<WithDetails extends boolean | undefined = undefined> =
-  | PubKey<WithDetails>
-  | SecPubKey<WithDetails>;
+const formatKeyOptionName = (key: SecPubKey | PubKey) => {
+  return `${key.name} [${
+    key.type === KeyType.SecPub ? "Identity" : "Contact"
+  }]`;
+};
 
 export function Content(props: { version: string }) {
   const [vaultEncryptionPassword, setVaultEncryptionPassword] = useState<
@@ -170,8 +172,6 @@ export function Content(props: { version: string }) {
     ...(loadedContacts ?? []),
   ];
 
-  console.log(joinedLoadedKeys);
-
   if (!vaultEncryptionPassword && !modal.isOpen) {
     modal.open({
       title: "Please enter your vault password",
@@ -200,9 +200,9 @@ export function Content(props: { version: string }) {
       <nav className="px-8 py-1 border-b border-neutral-300 bg-white flex justify-between">
         <span>pgpweb v{props.version}</span>
         {vaultEncryptionPassword ? (
-          <span className="bg-green-500 text-white px-1">Encrypted</span>
+          <span className="bg-green-600 text-white px-1">Encrypted</span>
         ) : (
-          <span className="bg-red-500 text-white px-1">Unencrypted</span>
+          <span className="bg-red-600 text-white px-1">Unencrypted</span>
         )}
       </nav>
 
@@ -213,8 +213,11 @@ export function Content(props: { version: string }) {
               <h2 className="mb-1">Identities (sec/pub)</h2>
               <Table
                 isLoading={!loadedIdentities}
-                columns={["Fingerprint", "User IDs", ""]}
+                columns={["Name", "Fingerprint", "User IDs", ""]}
                 rows={(loadedIdentities ?? []).map((key, i) => [
+                  {
+                    value: key.name,
+                  },
                   {
                     value: key.details.pgp.publicKey.keyPacket
                       .getFingerprint()
@@ -301,7 +304,7 @@ export function Content(props: { version: string }) {
                           <span className="block mb-1">Name*</span>
                           <Input
                             name="name"
-                            placeholder="Secret identity"
+                            placeholder="Max Private"
                             required
                           />
                         </label>
@@ -337,7 +340,7 @@ export function Content(props: { version: string }) {
                   })
                 }
               >
-                Import identity
+                Import
               </Button>
               <Button
                 onClick={() => {
@@ -347,11 +350,7 @@ export function Content(props: { version: string }) {
                       <>
                         <label className="block">
                           <span className="block mb-1">Name*</span>
-                          <Input
-                            name="name"
-                            placeholder="Max Private"
-                            required
-                          />
+                          <Input name="name" placeholder="Joe" required />
                         </label>
 
                         <label className="mt-2 block">
@@ -360,7 +359,7 @@ export function Content(props: { version: string }) {
                           </span>
                           <Input
                             name="associated-name"
-                            placeholder="Max Public"
+                            placeholder="J."
                             required
                           />
                         </label>
@@ -371,7 +370,7 @@ export function Content(props: { version: string }) {
                           </span>
                           <Input
                             name="associated-email"
-                            placeholder="max@public.com"
+                            placeholder="j@maybeleavethisempty.com"
                           />
                         </label>
 
@@ -431,8 +430,11 @@ export function Content(props: { version: string }) {
               <h2 className="mb-1">Contacts (pub)</h2>
               <Table
                 isLoading={!loadedContacts}
-                columns={["Fingerprint", "User IDs", ""]}
+                columns={["Name", "Fingerprint", "User IDs", ""]}
                 rows={(loadedContacts ?? []).map((key) => [
+                  {
+                    value: key.name,
+                  },
                   {
                     value: key.details.pgp.publicKey.keyPacket
                       .getFingerprint()
@@ -507,11 +509,7 @@ export function Content(props: { version: string }) {
                       <>
                         <label className="block">
                           <span className="block mb-1">Name*</span>
-                          <Input
-                            name="name"
-                            placeholder="Joe Fisher"
-                            required
-                          />
+                          <Input name="name" placeholder="Joe" required />
                         </label>
 
                         <label className="mt-2 block">
@@ -527,7 +525,7 @@ export function Content(props: { version: string }) {
                   })
                 }
               >
-                Import contact
+                Import
               </Button>
             </div>
           </section>
@@ -578,7 +576,11 @@ export function Content(props: { version: string }) {
                         title: "Your encrypted message",
                         body: (
                           <label className="block">
-                            <Textarea rows={10} value={String(encrypted)} />
+                            <Textarea
+                              rows={10}
+                              value={String(encrypted)}
+                              readOnly
+                            />
                           </label>
                         ),
                       });
@@ -604,13 +606,7 @@ export function Content(props: { version: string }) {
                           {(loadedIdentities ?? []).map((key) => {
                             return (
                               <option value={key.overview.publicKeyArmored}>
-                                {`${key.details.pgp.publicKey
-                                  .getFingerprint()
-                                  .toUpperCase()} (${
-                                  key.type === KeyType.SecPub
-                                    ? "Identity"
-                                    : "Contact"
-                                })`}
+                                {formatKeyOptionName(key)}
                               </option>
                             );
                           })}
@@ -623,13 +619,7 @@ export function Content(props: { version: string }) {
                           {joinedLoadedKeys.map((key) => {
                             return (
                               <option value={key.overview.publicKeyArmored}>
-                                {`${key.details.pgp.publicKey
-                                  .getFingerprint()
-                                  .toUpperCase()} (${
-                                  key.type === KeyType.SecPub
-                                    ? "Identity"
-                                    : "Contact"
-                                })`}
+                                {formatKeyOptionName(key)}
                               </option>
                             );
                           })}
@@ -641,7 +631,7 @@ export function Content(props: { version: string }) {
               }
               className="mt-2"
             >
-              Encrypt message
+              Encrypt
             </Button>
 
             <Button
@@ -649,6 +639,10 @@ export function Content(props: { version: string }) {
                 modal.open({
                   async onSubmit(formData) {
                     try {
+                      const senderPublicKeyArmored = formData.get(
+                        "sender-public-key-armored"
+                      ) as "UNKNOWN" | string;
+
                       const message = await openpgp.readMessage({
                         armoredMessage: formData.get("encrypted-message")!,
                       });
@@ -660,16 +654,17 @@ export function Content(props: { version: string }) {
                           );
                         }
                       );
-                      const senderLoadedKey = joinedLoadedKeys.find(
-                        (contact) => {
-                          return (
-                            contact.overview.publicKeyArmored ===
-                            formData.get("sender-public-key-armored")
-                          );
-                        }
-                      );
+                      const senderLoadedKey =
+                        senderPublicKeyArmored !== "UNKNOWN"
+                          ? joinedLoadedKeys.find((contact) => {
+                              return (
+                                contact.overview.publicKeyArmored ===
+                                senderPublicKeyArmored
+                              );
+                            })
+                          : undefined;
 
-                      if (!recipientLoadedKey || !senderLoadedKey) {
+                      if (!recipientLoadedKey) {
                         throw new Error("Could not find key");
                       }
 
@@ -678,16 +673,24 @@ export function Content(props: { version: string }) {
                           message,
                           decryptionKeys:
                             recipientLoadedKey.details.pgp.privateKey,
-                          expectSigned: true,
-                          verificationKeys:
-                            senderLoadedKey.details.pgp.publicKey,
+                          ...(senderLoadedKey
+                            ? {
+                                expectSigned: true,
+                                verificationKeys:
+                                  senderLoadedKey.details.pgp.publicKey,
+                              }
+                            : {}),
                         });
 
                       modal.open({
                         title: "Your decrypted message",
                         body: (
                           <label className="block">
-                            <Textarea rows={10} value={String(decrypted)} />
+                            <Textarea
+                              rows={10}
+                              value={String(decrypted)}
+                              readOnly
+                            />
                           </label>
                         ),
                       });
@@ -710,16 +713,13 @@ export function Content(props: { version: string }) {
                       <label className="mt-2 block">
                         <span className="block mb-1">Sender*</span>
                         <Select name="sender-public-key-armored">
+                          <option value="UNKNOWN">
+                            [Unknown, do not verify]
+                          </option>
                           {(joinedLoadedKeys ?? []).map((key) => {
                             return (
                               <option value={key.overview.publicKeyArmored}>
-                                {`${key.details.pgp.publicKey
-                                  .getFingerprint()
-                                  .toUpperCase()} (${
-                                  key.type === KeyType.SecPub
-                                    ? "Identity"
-                                    : "Contact"
-                                })`}
+                                {formatKeyOptionName(key)}
                               </option>
                             );
                           })}
@@ -732,13 +732,7 @@ export function Content(props: { version: string }) {
                           {(loadedIdentities ?? []).map((key) => {
                             return (
                               <option value={key.overview.publicKeyArmored}>
-                                {`${key.details.pgp.publicKey
-                                  .getFingerprint()
-                                  .toUpperCase()} (${
-                                  key.type === KeyType.SecPub
-                                    ? "Identity"
-                                    : "Contact"
-                                })`}
+                                {formatKeyOptionName(key)}
                               </option>
                             );
                           })}
@@ -750,7 +744,7 @@ export function Content(props: { version: string }) {
               }
               className="mt-2"
             >
-              Decrypt message
+              Decrypt
             </Button>
           </div>
         </section>
