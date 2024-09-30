@@ -3,7 +3,7 @@ import { twMerge } from "tailwind-merge";
 
 interface TableProps {
   columns: string[];
-  rows: { value: ReactNode; alignRight?: boolean }[][];
+  rows: { value: ReactNode }[][];
   isLoading?: boolean;
 }
 
@@ -68,7 +68,6 @@ export const Table = (props: TableProps) => {
                     <td
                       className={twMerge(
                         "py-2 px-3 border-neutral-300 border-t border-l overflow-hidden break-all",
-                        cell.alignRight ? "text-right" : "",
                         cellI === row.length - 1 ? "border-r" : "",
                         rowI === props.rows.length - 1 ? "border-b" : ""
                       )}

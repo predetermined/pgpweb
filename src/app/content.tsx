@@ -199,6 +199,22 @@ export function Content(props: { version: string }) {
     });
   }
 
+  const openKeyOverviewModal = (key: PubKey | SecPubKey) => {
+    modal.open({
+      title: `${key.name} [${
+        key.type === KeyType.SecPub ? "Identity" : "Contact"
+      }]`,
+      body: (
+        <>
+          <label className="block">
+            <span className="block mb-1">Public key</span>
+            <Textarea value={String(key.overview.publicKeyArmored)} readOnly />
+          </label>
+        </>
+      ),
+    });
+  };
+
   return (
     <>
       <modal.Modal />
@@ -245,11 +261,17 @@ export function Content(props: { version: string }) {
                       .join(", "),
                   },
                   {
-                    alignRight: true,
                     value: (
-                      <div>
+                      <div className="space-x-2 flex justify-end">
                         <Button
-                          className="py-1"
+                          className="py-1 text-sm"
+                          onClick={() => openKeyOverviewModal(key)}
+                        >
+                          Show
+                        </Button>
+
+                        <Button
+                          className="py-1 text-sm bg-red-600 border-red-700"
                           onClick={() => {
                             identities.set(
                               (identities.value ?? []).filter((_key) => {
@@ -307,7 +329,7 @@ export function Content(props: { version: string }) {
                         alert("Error: " + e);
                       }
                     },
-                    title: "Import a new key",
+                    title: "Import a new identity",
                     body: (
                       <>
                         <label className="block">
@@ -401,7 +423,7 @@ export function Content(props: { version: string }) {
                         privateKey: privateKeyArmored,
                         publicKey: publicKeyArmored,
                       } = await openpgp.generateKey({
-                        type: "ecc",
+                        type: "rsa",
                         curve: "curve25519",
                         userIDs: [
                           {
@@ -462,11 +484,17 @@ export function Content(props: { version: string }) {
                       .join(", "),
                   },
                   {
-                    alignRight: true,
                     value: (
-                      <div>
+                      <div className="space-x-2 flex justify-end">
                         <Button
-                          className="py-1"
+                          className="py-1 text-sm"
+                          onClick={() => openKeyOverviewModal(key)}
+                        >
+                          Show
+                        </Button>
+
+                        <Button
+                          className="py-1 text-sm bg-red-600 border-red-700"
                           onClick={() => {
                             contacts.set(
                               (contacts.value ?? []).filter((_key) => {
@@ -550,6 +578,91 @@ export function Content(props: { version: string }) {
                 modal.open({
                   async onSubmit(formData) {
                     try {
+                      const message = await openpgp.readCleartextMessage({
+                        cleartextMessage: formData.get(
+                          "signed-message"
+                        ) as string,
+                      });
+                      const signeeLoadedKey = joinedLoadedKeys.find(
+                        (contact) => {
+                          return (
+                            contact.overview.publicKeyArmored ===
+                            formData.get("signee-public-key-armored")
+                          );
+                        }
+                      );
+                      if (!signeeLoadedKey) {
+                        throw new Error("Could not find key");
+                      }
+
+                      const verificationResult = await openpgp.verify({
+                        message,
+                        verificationKeys: signeeLoadedKey.details.pgp.publicKey,
+                      });
+                      const { verified, keyID } =
+                        verificationResult.signatures[0];
+                      const isVerified = await (async () => {
+                        try {
+                          await verified;
+                          return true;
+                        } catch {
+                          return false;
+                        }
+                      })();
+                      modal.open({
+                        title: "Verification result",
+                        body: (
+                          <>
+                            <p>
+                              {isVerified
+                                ? `Success! Signed by Key ID ${keyID.toHex()}.`
+                                : "Failed to verify."}
+                            </p>
+                          </>
+                        ),
+                      });
+                    } catch (e) {
+                      alert("Error: " + e);
+                    }
+                  },
+                  title: "Verify signed message",
+                  body: (
+                    <>
+                      <label className="block">
+                        <span className="block mb-1">Signed message*</span>
+                        <Textarea
+                          name="signed-message"
+                          placeholder="-----BEGIN PGP SIGNED MESSAGE-----"
+                          required
+                        />
+                      </label>
+
+                      <label className="mt-2 block">
+                        <span className="block mb-1">Signee*</span>
+                        <Select name="signee-public-key-armored">
+                          {joinedLoadedKeys.map((key) => {
+                            return (
+                              <option value={key.overview.publicKeyArmored}>
+                                {formatKeyOptionName(key)}
+                              </option>
+                            );
+                          })}
+                        </Select>
+                      </label>
+                    </>
+                  ),
+                })
+              }
+              className="mt-2"
+            >
+              Verify
+            </Button>
+
+            <Button
+              onClick={() =>
+                modal.open({
+                  async onSubmit(formData) {
+                    try {
                       const message = await openpgp.createMessage({
                         text: formData.get("text")!,
                       });
@@ -586,6 +699,9 @@ export function Content(props: { version: string }) {
                         title: "Your encrypted message",
                         body: (
                           <label className="block">
+                            <span className="block mb-1">
+                              Encrypted message
+                            </span>
                             <Textarea
                               rows={10}
                               value={String(encrypted)}
