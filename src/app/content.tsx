@@ -240,7 +240,7 @@ export function Content(props: { version: string }) {
               <Table
                 isLoading={!loadedIdentities}
                 columns={["Name", "Fingerprint", "User IDs", ""]}
-                rows={(loadedIdentities ?? []).map((key, i) => [
+                rows={(loadedIdentities ?? []).map((key) => [
                   {
                     value: key.name,
                   },
@@ -642,7 +642,10 @@ export function Content(props: { version: string }) {
                         <Select name="signee-public-key-armored">
                           {joinedLoadedKeys.map((key) => {
                             return (
-                              <option value={key.overview.publicKeyArmored}>
+                              <option
+                                key={key.overview.publicKeyArmored}
+                                value={key.overview.publicKeyArmored}
+                              >
                                 {formatKeyOptionName(key)}
                               </option>
                             );
@@ -731,7 +734,10 @@ export function Content(props: { version: string }) {
                         <Select name="sender-public-key-armored">
                           {(loadedIdentities ?? []).map((key) => {
                             return (
-                              <option value={key.overview.publicKeyArmored}>
+                              <option
+                                key={key.overview.publicKeyArmored}
+                                value={key.overview.publicKeyArmored}
+                              >
                                 {formatKeyOptionName(key)}
                               </option>
                             );
@@ -744,7 +750,10 @@ export function Content(props: { version: string }) {
                         <Select name="recipient-public-key-armored">
                           {joinedLoadedKeys.map((key) => {
                             return (
-                              <option value={key.overview.publicKeyArmored}>
+                              <option
+                                key={key.overview.publicKeyArmored}
+                                value={key.overview.publicKeyArmored}
+                              >
                                 {formatKeyOptionName(key)}
                               </option>
                             );
@@ -794,19 +803,18 @@ export function Content(props: { version: string }) {
                         throw new Error("Could not find key");
                       }
 
-                      const { data: decrypted, signatures: _signatures } =
-                        await openpgp.decrypt({
-                          message,
-                          decryptionKeys:
-                            recipientLoadedKey.details.pgp.privateKey,
-                          ...(senderLoadedKey
-                            ? {
-                                expectSigned: true,
-                                verificationKeys:
-                                  senderLoadedKey.details.pgp.publicKey,
-                              }
-                            : {}),
-                        });
+                      const { data: decrypted } = await openpgp.decrypt({
+                        message,
+                        decryptionKeys:
+                          recipientLoadedKey.details.pgp.privateKey,
+                        ...(senderLoadedKey
+                          ? {
+                              expectSigned: true,
+                              verificationKeys:
+                                senderLoadedKey.details.pgp.publicKey,
+                            }
+                          : {}),
+                      });
 
                       modal.open({
                         title: "Your decrypted message",
@@ -844,7 +852,10 @@ export function Content(props: { version: string }) {
                           </option>
                           {(joinedLoadedKeys ?? []).map((key) => {
                             return (
-                              <option value={key.overview.publicKeyArmored}>
+                              <option
+                                key={key.overview.publicKeyArmored}
+                                value={key.overview.publicKeyArmored}
+                              >
                                 {formatKeyOptionName(key)}
                               </option>
                             );
@@ -857,7 +868,10 @@ export function Content(props: { version: string }) {
                         <Select name="recipient-public-key-armored">
                           {(loadedIdentities ?? []).map((key) => {
                             return (
-                              <option value={key.overview.publicKeyArmored}>
+                              <option
+                                key={key.overview.publicKeyArmored}
+                                value={key.overview.publicKeyArmored}
+                              >
                                 {formatKeyOptionName(key)}
                               </option>
                             );
