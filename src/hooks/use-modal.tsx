@@ -35,7 +35,7 @@ export const useModal = () => {
       if (!isOpen) return null;
 
       return (
-        <div className="fixed inset-0 flex justify-center items-center bg-white bg-opacity-75">
+        <div className="fixed inset-0 flex justify-center items-center bg-white bg-opacity-75 z-10">
           <form
             onSubmit={(e) => {
               e.preventDefault();

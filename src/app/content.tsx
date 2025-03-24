@@ -8,6 +8,14 @@ import { Table } from "../components/table";
 import { useStateAndLocalStorage } from "../hooks/use-local-storage";
 import { useModal } from "../hooks/use-modal";
 
+interface ImportExportFormat {
+  version: 1;
+  data: {
+    contacts: string;
+    identities: string;
+  };
+}
+
 enum KeyType {
   SecPub = "SEC_PUB",
   Pub = "PUB",
@@ -63,6 +71,11 @@ interface SecPubKey<WithDetails extends boolean | undefined = undefined> {
         | false;
 }
 
+const LOCAL_STORAGE_NAMES = {
+  contacts: "pgpweb_1__enc_contacts",
+  identities: "pgpweb_1__enc_identities",
+} as const;
+
 const formatKeyOptionName = (key: SecPubKey | PubKey) => {
   return `${key.name} [${
     key.type === KeyType.SecPub ? "Identity" : "Contact"
@@ -75,7 +88,7 @@ export function Content(props: { version: string }) {
   >(null);
 
   const identities = useStateAndLocalStorage<SecPubKey<false>[]>(
-    "pgpweb_1__enc_identities",
+    LOCAL_STORAGE_NAMES.identities,
     {
       encryptionPassword: vaultEncryptionPassword ?? undefined,
       isDisabled: !vaultEncryptionPassword,
@@ -87,7 +100,7 @@ export function Content(props: { version: string }) {
   >(null);
 
   const contacts = useStateAndLocalStorage<PubKey<false>[]>(
-    "pgpweb_1__enc_contacts",
+    LOCAL_STORAGE_NAMES.contacts,
     {
       encryptionPassword: vaultEncryptionPassword ?? undefined,
       isDisabled: !vaultEncryptionPassword,
@@ -215,6 +228,31 @@ export function Content(props: { version: string }) {
     });
   };
 
+  const exportVault = () => {
+    const content = {
+      version: 1,
+      data: {
+        contacts: localStorage.getItem(LOCAL_STORAGE_NAMES.contacts) ?? "[]",
+        identities:
+          localStorage.getItem(LOCAL_STORAGE_NAMES.identities) ?? "[]",
+      },
+    } satisfies ImportExportFormat;
+    const blob = new Blob([JSON.stringify(content)]);
+    const blobUrl = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = blobUrl;
+    link.download = "vault.json";
+    document.body.appendChild(link);
+    link.dispatchEvent(
+      new MouseEvent("click", {
+        bubbles: true,
+        cancelable: true,
+        view: window,
+      })
+    );
+    document.body.removeChild(link);
+  };
+
   return (
     <>
       <modal.Modal />
@@ -233,7 +271,44 @@ export function Content(props: { version: string }) {
       </nav>
 
       <main className="p-8">
-        <div className="flex space-x-4">
+        <section>
+          <div className="flex space-x-4">
+            <div className="relative">
+              <div>
+                <input
+                  id="import-input"
+                  onChange={async (e) => {
+                    const file = e.currentTarget.files?.item(0);
+                    if (!file) return;
+                    const text = await file.text();
+                    const json = JSON.parse(text) as ImportExportFormat;
+                    localStorage.setItem(
+                      LOCAL_STORAGE_NAMES.contacts,
+                      json.data.contacts
+                    );
+                    localStorage.setItem(
+                      LOCAL_STORAGE_NAMES.identities,
+                      json.data.identities
+                    );
+                    contacts.refetch();
+                    identities.refetch();
+                  }}
+                  type="file"
+                  className="hidden"
+                />
+                <label
+                  htmlFor="import-input"
+                  className="py-2 px-3 bg-black border border-black text-white rounded-sm inline-block cursor-pointer"
+                >
+                  Import
+                </label>
+              </div>
+            </div>
+            <Button onClick={exportVault}>Export</Button>
+          </div>
+        </section>
+
+        <div className="flex space-x-4 mt-6">
           <section className="w-1/2 flex flex-col justify-between">
             <div className="h-96 overflow-y-scroll">
               <h2 className="mb-1">Identities (sec/pub)</h2>

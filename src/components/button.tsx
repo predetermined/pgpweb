@@ -10,7 +10,7 @@ export const Button = (props: ButtonProps) => {
     <button
       {...buttonProps}
       className={twMerge(
-        "py-2 px-3 bg-black border border-black text-white rounded-sm",
+        "py-2 px-3 bg-black border border-black text-white rounded-sm cursor-pointer",
         className
       )}
     >

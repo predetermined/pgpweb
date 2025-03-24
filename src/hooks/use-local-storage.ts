@@ -36,6 +36,7 @@ export const useStateAndLocalStorage = <T>(
 ): {
   value: T | null;
   set(value: T): void;
+  refetch(): void;
 } => {
   const [value, setValue] = useState<T | null>(null);
 
@@ -97,6 +98,7 @@ export const useStateAndLocalStorage = <T>(
       return;
     }
     const value = await getTransformedFromLocalStorage(v);
+    console.debug(`LocalStorage[${key}]: Set value`);
     setValue(value);
   };
 
@@ -118,5 +120,8 @@ export const useStateAndLocalStorage = <T>(
   return {
     value,
     set,
+    refetch() {
+      loadValue();
+    },
   };
 };
